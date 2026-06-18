@@ -3,23 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>دورة مقدمة في استخبارات المصادر المفتوحة - OSINT</title>
-    <style>
+   <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
         
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden; /* يمنع ظهور شريط التمرير العرضي المزعج نهائياً */
+            background-color: #f7fafc;
             font-family: 'Tajawal', sans-serif;
             line-height: 1.8;
             color: #2d3748;
-            background-color: #f7fafc;
-            margin: 0;
-            padding: 0;
         }
+
+        /* هذا التعديل يضمن احتواء كافة العناصر التائهة في المنتصف وإرجاعها داخل العرض الأنيق */
+        body > *, .container {
+            max-width: 800px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box;
+        }
+
+        /* زيادة أمان لضمان بقاء الخلفية البيضاء للموقع متصلة كصفحة واحدة */
         .container {
-            max-width: 800px;
-            margin: 0 auto;
             padding: 40px 20px;
             background-color: #ffffff;
         }
+
+        /* تنسيق يحمي جميع الصور من الخروج عن جدار الصفحة وتشويه المظهر */
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            margin: 20px auto !important;
+        }
+
         h1 {
             color: #1a365d;
             text-align: center;
@@ -82,7 +100,7 @@
         }
         @media print {
             body { background-color: #ffffff; }
-            .container { padding: 0; width: 100%; }
+            body > *, .container { padding: 0; width: 100%; max-width: 100% !important; }
             h2 { page-break-before: auto; }
             blockquote { page-break-inside: avoid; }
         }
