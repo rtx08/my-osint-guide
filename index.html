@@ -1551,6 +1551,8 @@
             sections.forEach(function (s) { s.classList.remove('open'); });
             if (willOpen) section.classList.add('open');
 
+            if (!willOpen) return;
+
             var target = document.querySelector(head.getAttribute('data-target'));
             if (target) {
                 if (window.innerWidth <= 920) closeMenu();
@@ -1575,14 +1577,18 @@
         linkById[link.getAttribute('href').slice(1)] = link;
     });
 
+    var activeSectionEl = null;
     function setActive(id) {
         lessonLinks.forEach(function (l) { l.classList.remove('active'); });
         var activeLink = linkById[id];
         if (!activeLink) return;
         activeLink.classList.add('active');
         var parentSection = activeLink.closest('.nav-section');
-        sections.forEach(function (s) { s.classList.remove('open'); });
-        if (parentSection) parentSection.classList.add('open');
+        if (parentSection && parentSection !== activeSectionEl) {
+            sections.forEach(function (s) { s.classList.remove('open'); });
+            parentSection.classList.add('open');
+            activeSectionEl = parentSection;
+        }
     }
 
     if (pageHeadings.length) {
