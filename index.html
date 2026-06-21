@@ -3,84 +3,509 @@
 <head>
     <meta charset="UTF-8">
     <title>دورة مقدمة في استخبارات المصادر المفتوحة - OSINT</title>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('osint-theme');
+                var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+
+                if (window.innerWidth > 920 && localStorage.getItem('osint-sidebar') === 'collapsed') {
+                    document.documentElement.setAttribute('data-sidebar', 'collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+        /* ============ Design tokens ============ */
+        :root {
+            --bg: #f3f6fa;
+            --surface: #ffffff;
+            --surface-alt: #f7fafc;
+            --text: #2d3748;
+            --text-soft: #4a5568;
+            --text-mute: #718096;
+            --heading: #1a365d;
+            --accent: #2b6cb0;
+            --accent-strong: #3182ce;
+            --accent-soft: #ebf8ff;
+            --highlight: #c53030;
+            --border: #e2e8f0;
+            --border-soft: #edf2f7;
+            --code-bg: #edf2f7;
+            --shadow: 0 10px 25px rgba(20, 35, 60, 0.06);
+            --shadow-sm: 0 4px 10px rgba(20, 35, 60, 0.05);
+            --sidebar-bg: #ffffff;
+            --sidebar-bg-alt: #eef3f9;
+            --sidebar-text: #2d3748;
+            --sidebar-text-mute: #718096;
+            --sidebar-active: #dbeafe;
+            --sidebar-border: #e2e8f0;
+            --radius: 10px;
+            --font-body: 'Tajawal', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0b1320;
+            --surface: #121c2c;
+            --surface-alt: #16223590;
+            --text: #cdd7e6;
+            --text-soft: #aebcd1;
+            --text-mute: #7e90ab;
+            --heading: #e7eef9;
+            --accent: #5ba3e0;
+            --accent-strong: #79bcf2;
+            --accent-soft: #16273f;
+            --highlight: #fc8181;
+            --border: #243149;
+            --border-soft: #1c2738;
+            --code-bg: #18253a;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+            --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.3);
+            --sidebar-bg: #0a1424;
+            --sidebar-bg-alt: #0e1c30;
+            --sidebar-text: #c2d2e8;
+            --sidebar-text-mute: #6f87a6;
+            --sidebar-active: #1d3f63;
+            --sidebar-border: rgba(255,255,255,0.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: 'Tajawal', sans-serif;
+            font-family: var(--font-body);
             line-height: 1.8;
-            color: #2d3748;
-            background-color: #f7fafc;
+            color: var(--text);
+            background-color: var(--bg);
             margin: 0;
             padding: 0;
+            transition: background-color .25s ease, color .25s ease;
         }
+
+        a { color: var(--accent-strong); text-decoration: none; border-bottom: 1px solid currentColor; opacity: .88; }
+        a:hover { opacity: 1; }
+        :focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+
+        /* ============ App shell / layout ============ */
+        .app-shell {
+            display: flex;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .main-area {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 40px 20px;
-            background-color: #ffffff;
+            padding: 40px 20px 80px;
+            background-color: var(--surface);
+            transition: background-color .25s ease;
         }
+
         h1 {
-            color: #1a365d;
+            color: var(--heading);
             text-align: center;
-            border-bottom: 3px solid #3182ce;
-            padding-bottom: 15px;
-            margin-bottom: 40px;
             font-size: 28px;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        /* ============ Course hero ============ */
+        .course-hero {
+            position: relative;
+            margin: 18px 0 36px;
+            padding: 48px 30px;
+            border-radius: 20px;
+            text-align: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, #16365c 0%, #2b6cb0 130%);
+            box-shadow: var(--shadow);
+        }
+        [data-theme="dark"] .course-hero {
+            background: linear-gradient(135deg, #0a1626 0%, #1d4d78 130%);
+        }
+        .course-hero::before {
+            content: "";
+            position: absolute; inset: 0;
+            background-image:
+                radial-gradient(circle at 14% 22%, rgba(255,255,255,.13), transparent 40%),
+                radial-gradient(circle at 88% 78%, rgba(255,255,255,.10), transparent 45%);
+            pointer-events: none;
+        }
+        .course-hero::after {
+            content: "";
+            position: absolute; inset: 0;
+            background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px, transparent 1px, transparent 26px);
+            pointer-events: none;
+        }
+        .course-hero-badge {
+            position: relative; z-index: 1;
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.28);
+            color: #fff; font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.5px;
+            text-transform: uppercase; padding: 7px 18px; border-radius: 30px; margin-bottom: 24px;
+        }
+        .course-hero-badge svg { width: 13px; height: 13px; }
+        .course-hero-title { position: relative; z-index: 1; margin: 0; border: none; padding: 0; }
+        .course-hero-ar { display: block; font-size: 30px; font-weight: 900; color: #fff; line-height: 1.55; margin-bottom: 10px; }
+        .course-hero-en { display: block; font-family: var(--font-mono); font-size: 14.5px; font-weight: 500; color: rgba(255,255,255,.8); letter-spacing: .6px; }
+        @media (max-width: 600px) {
+            .course-hero { padding: 36px 20px; }
+            .course-hero-ar { font-size: 23px; }
         }
         h2 {
-            color: #2b6cb0;
-            border-right: 5px solid #3182ce;
+            color: var(--accent);
+            border-right: 5px solid var(--accent-strong);
             padding-right: 15px;
             margin-top: 35px;
             margin-bottom: 15px;
             font-size: 22px;
+            font-weight: 700;
+            scroll-margin-top: 76px;
         }
         h3 {
-            color: #2d3748;
+            color: var(--text);
             font-size: 18px;
             margin-top: 20px;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         p {
             margin-bottom: 15px;
             text-align: justify;
+            color: var(--text-soft);
         }
-        ul {
+        ul, ol {
             padding-right: 25px;
             margin-bottom: 20px;
+            color: var(--text-soft);
         }
         li {
             margin-bottom: 8px;
         }
+        li strong, p strong { color: var(--text); }
         blockquote {
-            background-color: #ebf8ff;
-            border-right: 4px solid #3182ce;
+            background-color: var(--accent-soft);
+            border-right: 4px solid var(--accent-strong);
             padding: 15px;
             margin: 20px 0;
             border-radius: 4px;
             font-style: italic;
+            color: var(--text-soft);
         }
+        blockquote p { text-align: right; }
         .highlight {
             font-weight: bold;
-            color: #c53030;
+            color: var(--highlight);
         }
         hr {
             border: 0;
             height: 1px;
-            background: #e2e8f0;
+            background: var(--border);
             margin: 40px 0;
         }
         .code-block {
-            background-color: #edf2f7;
+            background-color: var(--code-bg);
             padding: 10px 15px;
             border-radius: 6px;
-            font-family: monospace;
+            font-family: var(--font-mono);
             direction: ltr;
             text-align: left;
             margin: 15px 0;
+            color: var(--text);
         }
+        code {
+            font-family: var(--font-mono);
+            background-color: var(--code-bg);
+            color: var(--accent-strong);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: .92em;
+            direction: ltr;
+            display: inline-block;
+        }
+        img { border-color: var(--border) !important; }
+        [data-theme="dark"] img { filter: brightness(.92) contrast(1.02); }
+
+        /* ============ Section divider (intro block before each section's lessons) ============ */
+        .section-divider {
+            margin: 60px 0 38px;
+            padding: 26px 26px 28px;
+            border-radius: 18px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            scroll-margin-top: 76px;
+        }
+        .section-divider:first-of-type { margin-top: 10px; }
+        .section-divider::before {
+            content: "";
+            position: absolute; top: 0; bottom: 0; right: 0; width: 4px;
+            background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+        }
+        .section-divider-top { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+        .section-divider-icon {
+            width: 54px; height: 54px; border-radius: 15px; flex-shrink: 0;
+            background: var(--surface); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent-strong); box-shadow: var(--shadow-sm);
+        }
+        .section-divider-icon svg { width: 27px; height: 27px; }
+        .section-divider-titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .section-divider-eyebrow-text {
+            font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--accent-strong); font-weight: 600;
+        }
+        .section-divider-ar { font-size: 21px; font-weight: 900; color: var(--heading); line-height: 1.4; }
+        .section-divider-en { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-mute); letter-spacing: .4px; }
+        .section-divider-desc { color: var(--text-mute); font-size: 14.5px; line-height: 1.85; max-width: 620px; margin: 0; text-align: right; }
+
+        /* ============ Notice / credit box ============ */
+        .notice-box {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-right: 5px solid #0088cc;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px auto;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            scroll-margin-top: 76px;
+        }
+        .notice-box::before {
+            content: "";
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, #0088cc, #00a2ff);
+        }
+        .notice-head {
+            display: flex; align-items: center; margin-bottom: 12px; gap: 10px;
+        }
+        .notice-head i { color: #0088cc; font-size: 1.3rem; }
+        .notice-title { color: var(--heading); font-weight: 800; font-size: 1.2rem; letter-spacing: .3px; }
+        .notice-box p { margin: 0 0 20px 0; line-height: 1.7; font-size: 1rem; color: var(--text-soft); text-align: right; }
+        .notice-box hr { margin: 20px 0; }
+        .notice-foot {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+        }
+        .notice-author { display: flex; align-items: center; gap: 10px; }
+        .notice-author i { color: var(--text-mute); font-size: 1.1rem; }
+        .notice-author p { margin: 0; font-size: 1rem; color: var(--text-mute); font-weight: 500; }
+        .notice-author strong { color: var(--text); font-weight: 700; }
+        .telegram-btn {
+            display: inline-flex; align-items: center; background: #0088cc; color: #fff;
+            border-bottom: none; padding: 12px 24px; border-radius: 8px; font-size: .95rem;
+            font-weight: 600; box-shadow: 0 4px 12px rgba(0,136,204,0.25); gap: 10px;
+            transition: all .25s ease;
+        }
+        .telegram-btn:hover { background: #0077b5; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,136,204,.35); opacity:1; }
+        .telegram-btn i { font-size: 1.2rem; }
+
+        /* ============ Sidebar ============ */
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--sidebar-border);
+            z-index: 40;
+        }
+        .sidebar-brand {
+            padding: 24px 22px 18px;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        }
+        .sidebar-brand-text { display: flex; flex-direction: column; gap: 2px; }
+        .sidebar-brand-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .sidebar-brand-tag {
+            font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px;
+            color: var(--sidebar-text-mute); text-transform: uppercase;
+        }
+        .sidebar-brand-title { font-weight: 700; font-size: 15px; color: var(--heading); line-height: 1.5; }
+
+        .theme-toggle {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--sidebar-bg-alt); border: 1px solid var(--sidebar-border);
+            color: var(--sidebar-text); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: background .2s ease, transform .2s ease;
+        }
+        .theme-toggle:hover { background: var(--sidebar-active); transform: rotate(12deg); }
+        .theme-toggle svg { width: 18px; height: 18px; }
+        .theme-toggle .icon-moon { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+        .sidebar-nav { padding: 14px 12px 30px; flex: 1; }
+        .nav-section { margin-bottom: 6px; border-radius: 10px; overflow: hidden; }
+        .nav-section-head {
+            width: 100%; display: flex; align-items: center; gap: 12px;
+            background: transparent; border: 0; color: var(--sidebar-text);
+            padding: 12px 10px; cursor: pointer; text-align: right; border-radius: 8px;
+            font-family: var(--font-body); transition: background .2s ease, transform .2s ease;
+        }
+        .nav-section-head:hover { background: var(--sidebar-bg-alt); transform: translateX(-2px); }
+        .nav-section.active > .nav-section-head { background: var(--sidebar-bg-alt); }
+        .nav-index {
+            width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+            background: var(--sidebar-bg-alt); border: 1px solid var(--sidebar-border);
+            color: var(--accent-strong); display: flex; align-items: center; justify-content: center;
+            transition: background .2s ease, transform .2s ease;
+        }
+        .nav-index svg { width: 17px; height: 17px; }
+        .nav-section-head:hover .nav-index { transform: scale(1.06); }
+        .nav-section.open > .nav-section-head .nav-index,
+        .nav-welcome-link.active .nav-index { background: var(--sidebar-active); }
+        .nav-section-titles { flex: 1; min-width: 0; }
+        .nav-section-ar { font-weight: 700; font-size: 14.5px; color: var(--heading); display: block; }
+        .nav-section-en { font-family: var(--font-mono); font-size: 10.5px; color: var(--sidebar-text-mute); display: block; margin-top: 1px; letter-spacing: .4px; }
+        .nav-chevron { width: 14px; height: 14px; flex-shrink: 0; transition: transform .25s ease; color: var(--sidebar-text-mute); }
+        .nav-section.open .nav-chevron { transform: rotate(180deg); }
+
+        .nav-welcome-link {
+            border-bottom: 1px solid var(--sidebar-border);
+            margin-bottom: 12px; padding-bottom: 18px; text-decoration: none;
+        }
+        .nav-welcome-link.active { background: var(--sidebar-active); border-radius: 8px; }
+        .nav-welcome-link.active .nav-section-ar { color: var(--heading); }
+
+        .nav-section-desc {
+            font-size: 12px; color: var(--sidebar-text-mute); line-height: 1.7;
+            padding: 0 14px 10px 10px; margin: 0;
+        }
+
+        .nav-lessons {
+            list-style: none; margin: 0; padding: 0 8px 10px;
+            display: grid; gap: 2px;
+            max-height: 0; overflow: hidden;
+            transition: max-height .3s ease;
+        }
+        .nav-section.open .nav-lessons { max-height: 600px; }
+        .nav-lessons a {
+            display: flex; align-items: baseline; gap: 8px;
+            padding: 8px 10px 8px 8px; border-radius: 7px; border-bottom: none;
+            color: var(--sidebar-text); font-size: 13px; line-height: 1.6;
+            border-right: 2px solid transparent; opacity: .92;
+        }
+        .nav-lessons a:hover { background: var(--sidebar-bg-alt); opacity: 1; }
+        .nav-lessons a.active {
+            background: var(--sidebar-active); border-right-color: var(--accent-strong);
+            color: var(--heading); opacity: 1;
+        }
+        .nav-lessons .tag { font-family: var(--font-mono); font-size: 10px; color: var(--sidebar-text-mute); flex-shrink: 0; }
+        .nav-lessons a.active .tag { color: var(--accent-strong); }
+
+        .sidebar { scrollbar-width: thin; scrollbar-color: var(--sidebar-border) transparent; }
+        .sidebar::-webkit-scrollbar { width: 7px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--sidebar-border); border-radius: 10px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+
+        /* ============ Desktop collapse / reopen ============ */
+        .sidebar-collapse-btn {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--sidebar-bg-alt); border: 1px solid var(--sidebar-border);
+            color: var(--sidebar-text); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: background .2s ease;
+        }
+        .sidebar-collapse-btn:hover { background: var(--sidebar-active); }
+        .sidebar-collapse-btn svg { width: 17px; height: 17px; }
+
+        .sidebar-reopen-btn {
+            display: none;
+            position: fixed; top: 22px; right: 22px; z-index: 40;
+            width: 46px; height: 46px; border-radius: 50%; border: none;
+            background: var(--accent-strong); color: #fff;
+            align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: var(--shadow); transition: transform .2s ease;
+        }
+        .sidebar-reopen-btn:hover { transform: scale(1.06); }
+        .sidebar-reopen-btn svg { width: 19px; height: 19px; }
+
+        /* ============ Floating theme toggle (lives outside the sidebar/menu) ============ */
+        .theme-toggle-floating {
+            position: fixed; top: 22px; left: 22px; z-index: 50;
+            box-shadow: var(--shadow-sm);
+        }
+        @media (max-width: 920px) {
+            .theme-toggle-floating { display: none; }
+        }
+
+        @media (min-width: 921px) {
+            .sidebar { transition: width .28s ease, opacity .2s ease, padding .28s ease, border-color .28s ease; }
+            [data-sidebar="collapsed"] .sidebar {
+                width: 0; min-width: 0; opacity: 0; pointer-events: none;
+                padding: 0; border-left-color: transparent; overflow: hidden;
+            }
+            [data-sidebar="collapsed"] .sidebar-reopen-btn { display: flex; }
+        }
+
+        /* mobile menu trigger */
+        .mobile-bar { display: none; }
+        .sidebar-backdrop { display: none; }
+        .sidebar-mobile-header { display: none; }
+
+        @media (max-width: 920px) {
+            .mobile-bar {
+                display: flex; align-items: center; justify-content: space-between;
+                position: sticky; top: 0; z-index: 45;
+                background: var(--sidebar-bg); color: var(--heading); padding: 12px 16px;
+                border-bottom: 1px solid var(--sidebar-border);
+            }
+            .mobile-bar-title { font-weight: 700; font-size: 14px; display:flex; gap:8px; align-items:center; }
+            .menu-btn {
+                width: 38px; height: 38px; border-radius: 8px; background: var(--sidebar-bg-alt);
+                border: 1px solid var(--sidebar-border); color: var(--sidebar-text); display: flex; align-items: center; justify-content: center;
+                cursor: pointer;
+            }
+            .menu-btn svg { width: 18px; height: 18px; }
+            .app-shell { display: block; }
+            .sidebar {
+                position: fixed; inset: 0 0 0 auto; height: 100vh; width: 84%; max-width: 320px;
+                transform: translateX(100%); transition: transform .3s ease; box-shadow: -10px 0 30px rgba(0,0,0,.3);
+                z-index: 70;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-brand { display: none; }
+            .sidebar-mobile-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 16px 18px; border-bottom: 1px solid var(--sidebar-border);
+            }
+            .sidebar-mobile-header span { font-weight: 700; font-size: 15px; color: var(--heading); }
+            .sidebar-close-btn {
+                width: 34px; height: 34px; border-radius: 50%; background: var(--sidebar-bg-alt);
+                border: 1px solid var(--sidebar-border); color: var(--sidebar-text);
+                display: flex; align-items: center; justify-content: center; cursor: pointer;
+            }
+            .sidebar-close-btn svg { width: 16px; height: 16px; }
+            .sidebar-backdrop {
+                display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 65;
+            }
+            .sidebar-backdrop.open { display: block; }
+            .container { padding: 28px 16px 60px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+        }
+
         @media print {
+            .sidebar, .mobile-bar, .sidebar-backdrop, .sidebar-reopen-btn, .theme-toggle-floating { display: none !important; }
             body { background-color: #ffffff; }
             .container { padding: 0; width: 100%; }
             h2 { page-break-before: auto; }
@@ -90,43 +515,214 @@
 </head>
 <body>
 
+<div class="mobile-bar">
+    <button class="menu-btn" id="menuOpenBtn" aria-label="فتح قائمة الأقسام" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+    </button>
+    <span class="mobile-bar-title">دورة OSINT</span>
+    <button class="theme-toggle" id="themeToggleMobile" aria-label="تبديل الوضع الداكن والفاتح">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<button class="sidebar-reopen-btn" id="sidebarReopenBtn" aria-label="فتح القائمة الجانبية">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="9" y1="4" x2="9" y2="20"></line><polyline points="13 9 16 12 13 15"></polyline></svg>
+</button>
+
+<button class="theme-toggle theme-toggle-floating" id="themeToggleDesktop" aria-label="تبديل الوضع الداكن والفاتح">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+</button>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-mobile-header">
+            <span>أقسام الدورة</span>
+            <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="إغلاق القائمة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
+            </button>
+        </div>
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-text">
+                <span class="sidebar-brand-tag">Security Blue Team</span>
+                <span class="sidebar-brand-title">مقدمة في الـ OSINT</span>
+            </div>
+            <div class="sidebar-brand-actions">
+                <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="طي القائمة الجانبية">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="15" y1="4" x2="15" y2="20"></line><polyline points="11 9 8 12 11 15"></polyline></svg>
+                </button>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+
+            <a href="#welcome" class="nav-section-head nav-welcome-link" id="navWelcomeLink">
+                <span class="nav-index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10v9.5a1 1 0 0 0 1 1H9.5v-6h5v6H17.5a1 1 0 0 0 1-1V10"></path></svg>
+                </span>
+                <span class="nav-section-titles">
+                    <span class="nav-section-ar">الترحيب</span>
+                    <span class="nav-section-en">Welcome</span>
+                </span>
+            </a>
+
+            <div class="nav-section" data-section="1">
+                <button class="nav-section-head" data-target="#section-1">
+                    <span class="nav-index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.2-3.7-1.7-6-1.7v13c2.3 0 4.4.5 6 1.7 1.6-1.2 3.7-1.7 6-1.7v-13c-2.3 0-4.4.5-6 1.7z"></path><path d="M12 6.5v13"></path></svg>
+                    </span>
+                    <span class="nav-section-titles">
+                        <span class="nav-section-ar">المقدمة</span>
+                        <span class="nav-section-en">Introduction</span>
+                    </span>
+                    <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="nav-section-desc">يقدّم لك هذا القسم تعريفاً بماهية الـ OSINT، وكيف يمكن أن يكون ذا قيمة لمختلف الفئات والجهات.</p>
+                <ul class="nav-lessons">
+                    <li><a href="#page1"><span class="tag">1.1</span><span>ما هو الـ OSINT؟ (What is OSINT?)</span></a></li>
+                    <li><a href="#page2"><span class="tag">1.2</span><span>لماذا يُعد الـ OSINT مفيداً؟ (Why is it Useful?)</span></a></li>
+                    <li><a href="#page3"><span class="tag">1.3</span><span>الأدوار والوظائف المرتبطة (Associated Roles)</span></a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section" data-section="2">
+                <button class="nav-section-head" data-target="#section-2">
+                    <span class="nav-index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 21"></path><path d="M3 12a9 9 0 0 1 15.5-6.3L21 3"></path><polyline points="3 16 3 21 8 21"></polyline><polyline points="21 8 21 3 16 3"></polyline></svg>
+                    </span>
+                    <span class="nav-section-titles">
+                        <span class="nav-section-ar">الاستخبارات</span>
+                        <span class="nav-section-en">Intelligence</span>
+                    </span>
+                    <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="nav-section-desc">يقدّم لك هذا القسم دورة العمل الاستخباراتي (Intelligence Lifecycle)، وكيفية تحويل البيانات إلى استخبارات قابلة للتنفيذ.</p>
+                <ul class="nav-lessons">
+                    <li><a href="#page4"><span class="tag">2.1</span><span>دورة العمل الاستخباراتي (The Intelligence Cycle)</span></a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section" data-section="3">
+                <button class="nav-section-head" data-target="#section-3">
+                    <span class="nav-index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V5l-8-3z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                    </span>
+                    <span class="nav-section-titles">
+                        <span class="nav-section-ar">تأمين نفسك عبر الإنترنت</span>
+                        <span class="nav-section-en">Securing Yourself Online</span>
+                    </span>
+                    <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="nav-section-desc">يناقش هذا القسم كيفية تتبعنا جميعاً عبر الإنترنت، وكيف يمكننا تقليل بصمتنا الرقمية.</p>
+                <ul class="nav-lessons">
+                    <li><a href="#page5"><span class="tag">3.1</span><span>التتبع عبر الإنترنت (Online Tracking)</span></a></li>
+                    <li><a href="#page6"><span class="tag">3.2</span><span>إخفاء الهوية وتجهيل البيانات (Anonymization)</span></a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section" data-section="4">
+                <button class="nav-section-head" data-target="#section-4">
+                    <span class="nav-index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                    </span>
+                    <span class="nav-section-titles">
+                        <span class="nav-section-ar">الأدوات والخدمات</span>
+                        <span class="nav-section-en">Tools and Services</span>
+                    </span>
+                    <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="nav-section-desc">يقدّم لك هذا القسم عدداً من أدوات الـ OSINT الواقعية ويوضح لك كيفية استخدامها.</p>
+                <ul class="nav-lessons">
+                    <li><a href="#page7"><span class="tag">4.1</span><span>أداة The Harvester</span></a></li>
+                    <li><a href="#page8"><span class="tag">4.2</span><span>أداة مالتيجو (Maltego)</span></a></li>
+                    <li><a href="#page9"><span class="tag">4.3</span><span>اختراقات البحث عبر جوجل (Google Dorks)</span></a></li>
+                    <li><a href="#page10"><span class="tag">4.4</span><span>الدفاع ضد الـ Google Dorks</span></a></li>
+                    <li><a href="#page11"><span class="tag">4.5</span><span>إطار عمل الـ OSINT (OSINT Framework)</span></a></li>
+                    <li><a href="#page12"><span class="tag">4.6</span><span>أداة تين آي (TinEye)</span></a></li>
+                    <li><a href="#page13"><span class="tag">4.7</span><span>البحث عن الصور عبر جوجل (Google Image Search)</span></a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section" data-section="5">
+                <button class="nav-section-head" data-target="#section-5">
+                    <span class="nav-index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                    </span>
+                    <span class="nav-section-titles">
+                        <span class="nav-section-ar">التحدي الختامي</span>
+                        <span class="nav-section-en">Course Capstone</span>
+                    </span>
+                    <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="nav-section-desc">يتضمّن هذا القسم تحدي الدورة الختامي، حيث ستضع مهاراتك على المحك!</p>
+                <ul class="nav-lessons">
+                    <li><a href="#page14"><span class="tag">5.1</span><span>ملخص تحدي الـ OSINT النهائي</span></a></li>
+                    <li><a href="#page14b"><span class="tag">5.2</span><span>تسليم تحدي الـ OSINT</span></a></li>
+                </ul>
+            </div>
+
+        </nav>
+    </aside>
+
+<div class="main-area">
 <div class="container">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<div style="background-color: #ffffff; border-right: 5px solid #0088cc; padding: 25px; border-radius: 12px; margin: 25px auto; max-width: 100%; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 10px 25px rgba(0,0,0,0.03); direction: rtl; text-align: right; border: 1px solid #e2e8f0; position: relative; overflow: hidden;">
-    
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0088cc, #00a2ff);"></div>
-
-    <div style="display: flex; align-items: center; margin-bottom: 12px; gap: 10px;">
-        <i class="fas fa-circle-exclamation" style="color: #0088cc; font-size: 1.3rem;"></i>
-        <span style="color: #1a202c; font-weight: 800; font-size: 1.2rem; letter-spacing: 0.3px;">تنويه هام حول المحتوى</span>
+<div class="notice-box" id="welcome">
+    <div class="notice-head">
+        <i class="fas fa-circle-exclamation"></i>
+        <span class="notice-title">تنويه هام حول المحتوى</span>
     </div>
-    
-    <p style="margin: 0 0 20px 0; line-height: 1.7; font-size: 1rem; color: #4a5568;">
+
+    <p>
         هذا الموقع هو ترجمة وافية ومخصصة لمنهج <strong style="color: #0088cc; font-weight: 700;">Introduction to OSINT</strong> المعتمد والمقدم من منصة <strong style="color: #0088cc; font-weight: 700;">Security Blue Team</strong> العالمية.
     </p>
-    
-    <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 20px 0;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-        
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-code" style="color: #718096; font-size: 1.1rem;"></i>
-            <p style="margin: 0; font-size: 1rem; color: #718096; font-weight: 500;">
-                تم تطوير وتجهيز هذا الموقع بواسطة: <strong style="color: #2d3748; font-weight: 700;">Abdullah Ahmed</strong>
+
+    <hr>
+
+    <div class="notice-foot">
+        <div class="notice-author">
+            <i class="fas fa-code"></i>
+            <p>
+                تم تطوير وتجهيز هذا الموقع بواسطة: <strong>Abdullah Ahmed</strong>
             </p>
         </div>
-        
-        <a href="https://t.me/DNA44" target="_blank" style="display: inline-flex; align-items: center; background: #0088cc; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,136,204,0.2); border: none; cursor: pointer; transition: all 0.25s ease-in-out; gap: 10px;" onmouseover="this.style.background='#0077b5'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,136,204,0.35)';" onmouseout="this.style.background='#0088cc'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,136,204,0.2)';">
-            <i class="fab fa-telegram-plane" style="font-size: 1.2rem;"></i>
+
+        <a href="https://t.me/DNA44" target="_blank" class="telegram-btn">
+            <i class="fab fa-telegram-plane"></i>
             <span>تواصل معي عبر تليجرام</span>
         </a>
     </div>
 </div>
-    <h1>دورة مقدمة في استخبارات المصادر المفتوحة (Introduction to OSINT)</h1>
+    <header class="course-hero">
+        <span class="course-hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Security Blue Team — OSINT</span>
+        </span>
+        <h1 class="course-hero-title">
+            <span class="course-hero-ar">دورة مقدمة في استخبارات المصادر المفتوحة</span>
+            <span class="course-hero-en">Introduction to OSINT</span>
+        </h1>
+    </header>
+
+    <div class="section-divider" id="section-1">
+        <div class="section-divider-top">
+            <span class="section-divider-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.2-3.7-1.7-6-1.7v13c2.3 0 4.4.5 6 1.7 1.6-1.2 3.7-1.7 6-1.7v-13c-2.3 0-4.4.5-6 1.7z"></path><path d="M12 6.5v13"></path></svg>
+            </span>
+            <div class="section-divider-titles">
+                <span class="section-divider-eyebrow-text">القسم 01</span>
+                <span class="section-divider-ar">المقدمة</span>
+                <span class="section-divider-en">Introduction</span>
+            </div>
+        </div>
+        <p class="section-divider-desc">يقدّم لك هذا القسم تعريفاً بماهية الـ OSINT، وكيف يمكن أن يكون ذا قيمة لمختلف الفئات والجهات.</p>
+    </div>
 
     <!-- الصفحة الأولى -->
-    <h2>ما هو الـ OSINT؟ (What is OSINT?)</h2>
+    <h2 id="page1">ما هو الـ OSINT؟ (What is OSINT?)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>الـ OSINT هو اختصار لـ (Open-Source Intelligence) ويَعني "استخبارات المصادر المفتوحة"، وهو عبارة عن بيانات يتم جمعها من مصادر متاحة علناً للجميع للوصول إليها.</p>
     
@@ -178,7 +774,7 @@
 
     <!-- الصفحة الثانية -->
     <!-- قسم لماذا يعد الـ OSINT مفيداً المحدث -->
-    <h2>لماذا يُعد الـ OSINT مفيداً؟ (Why is it Useful?)</h2>
+    <h2 id="page2">لماذا يُعد الـ OSINT مفيداً؟ (Why is it Useful?)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>يمكن للكثير من الأشخاص والجهات الاستفادة من توظيف الـ OSINT. في هذا الدرس، سوف نستعرض مجموعات مختلفة وكيف يمكن لكل منها استغلال المعلومات المتاحة علناً لصالحها.</p>
 
@@ -222,7 +818,7 @@
 
     <hr>
     <!-- الصفحة الثالثة -->
-    <h2>الأدوار والوظائف المرتبطة (Associated Roles)</h2>
+    <h2 id="page3">الأدوار والوظائف المرتبطة (Associated Roles)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>هناك مجموعة واسعة من الوظائف التي تستخدم الـ OSINT بشكل أو بآخر. ولكن بشكل أساسي، يُعد محللو استخبارات التهديدات (Threat Intelligence Analysts)، والباحثون الأمنيون (Security Researchers)، ومختبرو الاختراق (Penetration Testers) هم الأكثر استخداماً للـ OSINT مقارنة بالوظائف الأخرى في مجال الأمن السيبراني.</p>
 
@@ -260,8 +856,22 @@
 
     <hr>
 
+    <div class="section-divider" id="section-2">
+        <div class="section-divider-top">
+            <span class="section-divider-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 21"></path><path d="M3 12a9 9 0 0 1 15.5-6.3L21 3"></path><polyline points="3 16 3 21 8 21"></polyline><polyline points="21 8 21 3 16 3"></polyline></svg>
+            </span>
+            <div class="section-divider-titles">
+                <span class="section-divider-eyebrow-text">القسم 02</span>
+                <span class="section-divider-ar">الاستخبارات</span>
+                <span class="section-divider-en">Intelligence</span>
+            </div>
+        </div>
+        <p class="section-divider-desc">يقدّم لك هذا القسم دورة العمل الاستخباراتي (Intelligence Lifecycle)، وكيفية تحويل البيانات إلى استخبارات قابلة للتنفيذ.</p>
+    </div>
+
     <!-- الصفحة الرابعة -->
-   <h2>دورة العمل الاستخباراتي (The Intelligence Cycle)</h2>
+   <h2 id="page4">دورة العمل الاستخباراتي (The Intelligence Cycle)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>لا يهم ما إذا كنت فرداً في جهاز إنفاذ القانون أو محللاً أمنياً في شركة، ففي كلتا الحالتين عندما تواجه سيناريو استخباراتياً، ستجد نفسك أمام المشهد ذاته: من جهة، لديك كمية هائلة من البيانات التي يجب تحليلها، ومن جهة أخرى، لديك مشكلة محددة يجب حلها.</p>
     <p>للتعامل مع هذا السيناريو، يتعين عليك الاستفادة من كمية البيانات الضخمة المتاحة تحت تصرفك واستخدامها لإعداد تقرير استخباراتي (Intelligence Report) يقدم تفسيراً واضحاً للحلول التي تبحث عنها.</p>
@@ -305,8 +915,22 @@
 
     <hr>
 
+    <div class="section-divider" id="section-3">
+        <div class="section-divider-top">
+            <span class="section-divider-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V5l-8-3z"></path><path d="m9 12 2 2 4-4"></path></svg>
+            </span>
+            <div class="section-divider-titles">
+                <span class="section-divider-eyebrow-text">القسم 03</span>
+                <span class="section-divider-ar">تأمين نفسك عبر الإنترنت</span>
+                <span class="section-divider-en">Securing Yourself Online</span>
+            </div>
+        </div>
+        <p class="section-divider-desc">يناقش هذا القسم كيفية تتبعنا جميعاً عبر الإنترنت، وكيف يمكننا تقليل بصمتنا الرقمية.</p>
+    </div>
+
     <!-- الصفحة الخامسة -->
-    <h2>التتبع عبر الإنترنت (Online Tracking)</h2>
+    <h2 id="page5">التتبع عبر الإنترنت (Online Tracking)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>هناك فكرة شائعة وخاطئة في مجتمع الأمن السيبراني تقول بأن عمليات الـ OSINT مخفية تماماً، وأنه لن يشعر بك الشخص أو المنظمة التي تحقق بشأنها بأي حال من الأحوال. ولهذا السبب تُسمى هذه التحقيقات بـ "العمليات الخاملة/السلبيّة" (Passive operations).</p>
     <p>ومع ذلك، الشيء الذي يجب أن تعرفه وتدركه عند هذه النقطة هو أنه لا يوجد شيء خاص أو سري على الإنترنت. فمنذ اللحظة التي تفتح فيها محرك البحث الموثوق لديك، يقوم متصفحك بإرسال معلوماتك إلى المواقع التي تزورها.</p>
@@ -360,7 +984,7 @@
     <hr>
 
     <!-- الصفحة السادسة -->
-    <h2>إخفاء الهوية وتجهيل البيانات (Anonymization)</h2>
+    <h2 id="page6">إخفاء الهوية وتجهيل البيانات (Anonymization)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>بعد ما قرأته للتو، لا بد أنك تسأل نفسك: "ولكن، إذا كنت في كل مرة أستخدم فيها الإنترنت مضطراً لإعطاء معلومات للموقع الذي أدخل إليه، فكيف يمكننا الحديث عن ميزة خفاء الهوية؟"</p>
     <p>والحقيقة أنه لا يمكننا التحدث عن خفاء تام، لأنه لا يمكنك أبداً أن تكون مخفياً بنسبة 100% أثناء استخدام الإنترنت. ومع ذلك، هذا لا يعني أنه لا يمكنك استخدام بعض التقنيات والأدوات التي تجعلك تبدو كشخص آخر، بحيث لا تتمكن شبكات التواصل الاجتماعي أو الشركات الكبرى (مثل Google) من معرفة هويتك الحقيقية أثناء تصفحك.</p>
@@ -413,9 +1037,9 @@
         </div>
 
         <div style="text-align: center; margin-bottom: 35px; display: block;">
-            <img src="Ublock%20Origin.png" alt="uBlock Origin" style="max-width: 100%; height: auto; display: inline-block; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px;">
+            <img src="UBlock Origin.png" alt="uBlock Origin" style="max-width: 100%; height: auto; display: inline-block; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px;">
             <p style="text-align: right; margin: 0 auto; max-width: 90%; font-weight: normal;">
-        <strong>uBlock Origin:</strong> تقوم بفلترة وحظر الإعلانات تماماً، وتمنع متصفحك من تحميل واستعراض المحتوى التسويقي والدعائي.
+                <strong>uBlock Origin:</strong> تقوم بفلترة وحظر الإعلانات تماماً، وتمنع متصفحك من تحميل واستعراض المحتوى التسويقي والدعائي.
             </p>
         </div>
 
@@ -435,15 +1059,29 @@
 
     <hr>
 
+    <div class="section-divider" id="section-4">
+        <div class="section-divider-top">
+            <span class="section-divider-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            </span>
+            <div class="section-divider-titles">
+                <span class="section-divider-eyebrow-text">القسم 04</span>
+                <span class="section-divider-ar">الأدوات والخدمات</span>
+                <span class="section-divider-en">Tools and Services</span>
+            </div>
+        </div>
+        <p class="section-divider-desc">يقدّم لك هذا القسم عدداً من أدوات الـ OSINT الواقعية ويوضح لك كيفية استخدامها.</p>
+    </div>
+
     <!-- الصفحة السابعة -->
-   <h2>أداة (The Harvester)</h2>
+   <h2 id="page7">أداة (The Harvester)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>أداة The Harvester هي أداة سطر أوامر (Command-line) مخصصة لجمع المعلومات (Information-gathering). تستخدم الأداة مصادر الـ OSINT المتنوعة لحصد بيانات حول النطاق المستهدف (Domain)، وتقوم باستخراج معلومات بالغة الأهمية مثل: أسماء المضيفين (Hostnames)، وعناوين الـ IP، وأسماء الموظفين (ومناصبهم الوظيفية)، وعناوين البريد الإلكتروني، وغيرها الكثير.</p>
     
     <h3>مثال عملي 1: فحص النطاق عبر محرك البحث Google</h3>
     <p>في المثال الأول، نقوم بإجراء استطلاع بسيط (Reconnaissance) على النطاق Google.com باختيار محرك البحث "Google" كمصدر للبيانات، عبر الأمر التالي:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         theharvester -d google.com -l 100 -b google
     </div>
 
@@ -464,7 +1102,7 @@
     <h3>مثال عملي 2: فحص الموظفين عبر منصة LinkedIn</h3>
     <p>الآن لنحاول تجربة شيء مختلف قليلاً؛ إذا كنا نريد شن هجمات هندسة اجتماعية ضد بعض موظفي شركة Google، فيمكننا التعرف بسرعة على الأهداف المحتملة من خلال تغيير مصدر البيانات ليصبح منصة LinkedIn بدلاً من Google، وذلك باستخدام الأمر التالي:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         theharvester -d google.com -l 100 -b linkedin
     </div>
     
@@ -489,7 +1127,7 @@
     <h3>نصيحة تطبيقية للدراسة</h3>
     <blockquote>
         <p>قم بتجربة أداة The Harvester باستخدام نطاقات مختلفة (Domains) ومصادر بيانات متنوعة. يمكنك استعراض ملف المساعدة الخاص بالأداة لمعرفة كافة الخيارات المتاحة والمصادر المدعومة عبر كتابة الأمر التالي في سطر الأوامر:</p>
-        <div class="code-block" style="direction: ltr; text-align: left; background-color: #edf2f7; padding: 8px; border-radius: 4px; font-family: monospace; margin: 10px 0; display: inline-block;">
+        <div class="code-block" style="display:inline-block;">
             theharvester
         </div>
         <p>سيوضح لك هذا الأمر جميع مصادر البيانات المتاحة (مثل Shodan, Bing, Censys) والمتغيرات الأخرى التي تساعدك في استخراج بيانات محددة بدقة.</p>
@@ -498,7 +1136,7 @@
     <hr>
 
     <!-- الصفحة الثامنة -->
-    <h2>أداة مالتيجو (Maltego)</h2>
+    <h2 id="page8">أداة مالتيجو (Maltego)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>امتداداً لأسلوب عمل أداة The Harvester، ننتقل الآن إلى أداة OSINT قوية للغاية تدعى Maltego.</p>
     <p>أداة Maltego هي أداة متقدمة لتعدين البيانات (Data mining) وجمع المعلومات، وتتميز بقدرتها على جلب بيانات في الوقت الفعلي (Real-time data) حول أنواع مختلفة من الكيانات (مثل: الشركات، الأشخاص، المواقع الإلكترونية، وغيرها). تقوم الأداة بتمثيل هذه البيانات رسومياً عبر عُقد (Nodes)، لتوضح لك بصرياً جميع الروابط والاتصالات التي تمكن البرنامج من العثور عليها عبر الإنترنت حول الهدف الخاضع للتحقيق.</p>
@@ -549,7 +1187,7 @@
     <hr>
 
     <!-- الصفحة التاسعة -->
-   <h2>اختراقات البحث عبر جوجل (Google Dorks)</h2>
+   <h2 id="page9">اختراقات البحث عبر جوجل (Google Dorks)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>يُعد محرك البحث جوجل مفيداً جداً بشكل عام، ولكن Google Dorks هي عبارة عن "حيل أو خبايا بحثية" (Search hacks) نستخدم فيها صيغاً ومتغيرات خاصة ضمن خانة البحث العادية في جوجل للعثور على معلومات دقيقة ومحددة جداً.</p>
     <p>تأتي صيغة الـ Dork دائماً على شكل: الكلمة المفتاحية:الأداة (operator:keyword)، ومثال على ذلك: <code>filetype:pdf</code>.</p>
@@ -566,7 +1204,7 @@
     <h3>1. العثور على الملفات (Finding Files)</h3>
     <p>دعنا نبدأ برؤية كيف يمكننا العثور على ملفات PDF مرتبطة بالأمن السيبراني، باستخدام صيغة البحث التالية:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         Cyber Security filetype:pdf
     </div>
     <img src="Google Dorks.png" alt="uBlock Origin" style="max-width: 100%; height: auto; display: inline-block; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px;">
@@ -579,7 +1217,7 @@
     <h3>2. حصر النطاقات الفرعية (Subdomain Enumeration)</h3>
     <p>الآن دعنا نرى كيف يمكن استخدام الـ Dorks لحصر واكتشاف جميع النطاقات الفرعية التابعة لنطاق رئيسي، وذلك لأغراض الاستطلاع الخامل (Passive Reconnaissance). سنأخذ موقع فيسبوك كمثال باستخدام الصيغة التالية:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         site:Facebook.com -site:www.Facebook.com
     </div>
     
@@ -596,7 +1234,7 @@
     <p>باستخدام أداة البحث <code>inurl:</code> (والتي تعني: ابحث داخل الرابط)، يمكننا البحث عن كلمات مفتاحية محددة تظهر في رابط الموقع (URL) بشكل أكثر دقة من البحث التقليدي.</p>
     <p>إذا استخدمنا الصيغة التالية:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         inurl:admin
     </div>
     
@@ -617,7 +1255,7 @@
     <hr>
 
     <!-- الصفحة العاشرة -->
-   <h2>الدفاع ضد الـ Google Dorks (Defending Against Google Dorks)</h2>
+   <h2 id="page10">الدفاع ضد الـ Google Dorks (Defending Against Google Dorks)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>لقد عرفنا أن الـ Google Dorks يمكن أن تكون قوية وصادمة للغاية؛ فقد تكشف عن بوابات تسجيل دخول المدراء، وأسماء المستخدمين وكلمات المرور، وكاميرات المراقبة المتصلة بالترنت (IP Cameras)، وغيرها الكثير. ولكن كيف نحمي أنفسنا ومؤسساتنا منها بدقة؟</p>
 
@@ -641,7 +1279,7 @@
     <p>ويمكن تحقيق ذلك بسهولة عبر إنشاء ملف نصي صغير في الموقع يُسمى <code>robots.txt</code>. هذا الملف يخبر محركات البحث بالصفحات التي يُسمح لها بأرشفتها والصفحات الممنوعة.</p>
     <p>مثال على محتوى الملف:</p>
     
-    <div class="code-block" style="direction: ltr; text-align: left; background-color: #f7fafc; padding: 12px; border-radius: 4px; font-family: monospace; margin: 15px 0;">
+    <div class="code-block">
         User-agent: *<br>
         Disallow: /
     </div>
@@ -664,7 +1302,7 @@
     <hr>
 
     <!-- الصفحة الحادية عشرة -->
-    <h2>إطار عمل الـ OSINT (OSINT Framework)</h2>
+    <h2 id="page11">إطار عمل الـ OSINT (OSINT Framework)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>يُعد هذا الموقع الإلكتروني بمثابة مستودع ومركز تجمّع ومحور رئيسي لمئات من مصادر وأدوات الـ OSINT المختلفة. يتميز الموقع بتصنيفه الشجري المبتكر والمبسط الذي يتيح للمحقق العثور على الأداة التي يحتاجها بسرعة فائقة بناءً على نوع البيانات المراد البحث عنها (مثل: البريد الإلكتروني، الحسابات، الأجهزة).</p>
     <p>يمكنك زيارة الموقع والاطلاع على تصنيفاته عبر الرابط: <a href="https://osintframework.com" target="_blank">osintframework.com</a></p>
@@ -684,7 +1322,7 @@
 
     <hr>
 
-   <h2>أداة تين آي (TinEye)</h2>
+   <h2 id="page12">أداة تين آي (TinEye)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>شركة TinEye هي شركة متخصصة في البحث عن الصور والتعرف الرقمي عليها وتتبعها. تقدم الشركة لعملائها ميزة تلقي تنبيهات (Alerts) فور العثور على صورهم الشخصية أو التجارية منشورة على الإنترنت.</p>
     <p><strong>لماذا يُعد هذا الأمر مفيداً؟</strong></p>
@@ -735,7 +1373,7 @@
 
 
     <!-- الصفحة الثالثة عشرة -->
-   <h2>البحث عن الصور عبر جوجل (Google Image Search)</h2>
+   <h2 id="page13">البحث عن الصور عبر جوجل (Google Image Search)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>تتشابه أداة البحث عن الصور من جوجل بشكل كبير جداً مع أداة TinEye؛ حيث تتشاركان في الوظيفة الأساسية وهي "البحث العكسي عن الصور".</p>
     <p>للبدء، كل ما عليك فعله هو التوجه إلى الرابط التالي: <a href="https://images.google.com" target="_blank">images.google.com</a> حيث يمكنك وضع رابط (URL) لصورة معينة، أو رفع الصورة يدوياً من جهازك. وفي هذا الدرس، سنقوم بتجربة رفع نفس صورة الكلب (Stock photo) التي استخدمناها في درس TinEye السابق للمقارنة بين الأداتين.</p>
@@ -771,8 +1409,22 @@
     <hr>
    
    
+    <div class="section-divider" id="section-5">
+        <div class="section-divider-top">
+            <span class="section-divider-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+            </span>
+            <div class="section-divider-titles">
+                <span class="section-divider-eyebrow-text">القسم 05</span>
+                <span class="section-divider-ar">التحدي الختامي</span>
+                <span class="section-divider-en">Course Capstone</span>
+            </div>
+        </div>
+        <p class="section-divider-desc">يتضمّن هذا القسم تحدي الدورة الختامي، حيث ستضع مهاراتك على المحك!</p>
+    </div>
+
     <!-- الصفحة الرابعة عشرة -->
-    <h2>ملخص تحدي الـ OSINT النهائي (OSINT Challenge Brief)</h2>
+    <h2 id="page14">ملخص تحدي الـ OSINT النهائي (OSINT Challenge Brief)</h2>
     <h3>مقدمة (Introduction)</h3>
     <p>مرحباً بك في التحدي النهائي لمسار "مقدمة في الـ OSINT"! نأمل أن تكون قد استمتعت بالمحتوى التعليمي حتى الآن، ولكن حان الوقت الآن لوضع مهاراتك قيد الاختبار الفعلي. في هذا التحدي، سيتعين عليك تحقيق ثلاثة أهداف رئيسية:</p>
     <ul>
@@ -808,7 +1460,7 @@
 
     <hr>
 
-    <h2>تسليم تحدي الـ OSINT ‏(OSINT Challenge Submission)</h2>
+    <h2 id="page14b">تسليم تحدي الـ OSINT ‏(OSINT Challenge Submission)</h2>
     <h3>إرشادات الاختبار (Quiz Instructions)</h3>
     <p>يرجى التأكد من قراءتك لملخص التحدي في الدرس السابق جيداً لتعتاد على سيناريو التحقيق وتعرف بدقة المعلومات التي يتعين عليك جمعها قبل البدء في تسجيل الإجابات.</p>
     
@@ -827,6 +1479,136 @@
     <hr>
 
 </div>
+</div>
+</div>
+
+<script>
+(function () {
+    var root = document.documentElement;
+    var themeBtns = [document.getElementById('themeToggleDesktop'), document.getElementById('themeToggleMobile')];
+
+    function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        try { localStorage.setItem('osint-theme', theme); } catch (e) {}
+    }
+
+    themeBtns.forEach(function (btn) {
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var current = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(current);
+        });
+    });
+
+    /* Mobile drawer */
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    var openBtn = document.getElementById('menuOpenBtn');
+    var closeBtn = document.getElementById('sidebarCloseBtn');
+
+    function openMenu() {
+        sidebar.classList.add('open');
+        backdrop.classList.add('open');
+        openBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeMenu() {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('open');
+        openBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (openBtn) openBtn.addEventListener('click', openMenu);
+    if (backdrop) backdrop.addEventListener('click', closeMenu);
+    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) closeMenu();
+    });
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 920) closeMenu();
+    });
+
+    /* Desktop collapse / reopen */
+    var collapseBtn = document.getElementById('sidebarCollapseBtn');
+    var reopenBtn = document.getElementById('sidebarReopenBtn');
+
+    function collapseSidebar() {
+        root.setAttribute('data-sidebar', 'collapsed');
+        try { localStorage.setItem('osint-sidebar', 'collapsed'); } catch (e) {}
+    }
+    function expandSidebar() {
+        root.removeAttribute('data-sidebar');
+        try { localStorage.setItem('osint-sidebar', 'expanded'); } catch (e) {}
+    }
+    if (collapseBtn) collapseBtn.addEventListener('click', collapseSidebar);
+    if (reopenBtn) reopenBtn.addEventListener('click', expandSidebar);
+
+    /* Accordion sections */
+    var sections = Array.prototype.slice.call(document.querySelectorAll('.nav-section'));
+    sections.forEach(function (section) {
+        var head = section.querySelector('.nav-section-head');
+        head.addEventListener('click', function () {
+            var willOpen = !section.classList.contains('open');
+            sections.forEach(function (s) { s.classList.remove('open'); });
+            if (willOpen) section.classList.add('open');
+
+            var target = document.querySelector(head.getAttribute('data-target'));
+            if (target) {
+                if (window.innerWidth <= 920) closeMenu();
+                setTimeout(function () {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, window.innerWidth <= 920 ? 200 : 0);
+            }
+        });
+    });
+
+    var lessonLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-lessons a'));
+    lessonLinks.forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 920) closeMenu();
+        });
+    });
+
+    /* Scrollspy: highlight current lesson + auto-expand its section */
+    var pageHeadings = Array.prototype.slice.call(document.querySelectorAll('h2[id]'));
+    var linkById = {};
+    lessonLinks.forEach(function (link) {
+        linkById[link.getAttribute('href').slice(1)] = link;
+    });
+
+    function setActive(id) {
+        lessonLinks.forEach(function (l) { l.classList.remove('active'); });
+        var activeLink = linkById[id];
+        if (!activeLink) return;
+        activeLink.classList.add('active');
+        var parentSection = activeLink.closest('.nav-section');
+        sections.forEach(function (s) { s.classList.remove('open'); });
+        if (parentSection) parentSection.classList.add('open');
+    }
+
+    if (pageHeadings.length) {
+        var ticking = false;
+        function updateActiveOnScroll() {
+            var offset = 110;
+            var current = pageHeadings[0];
+            for (var i = 0; i < pageHeadings.length; i++) {
+                if (pageHeadings[i].getBoundingClientRect().top - offset <= 0) {
+                    current = pageHeadings[i];
+                } else {
+                    break;
+                }
+            }
+            setActive(current.id);
+            ticking = false;
+        }
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                window.requestAnimationFrame(updateActiveOnScroll);
+                ticking = true;
+            }
+        }, { passive: true });
+        updateActiveOnScroll();
+    }
+})();
+</script>
 
 </body>
 </html>
